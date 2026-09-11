@@ -2,11 +2,7 @@ import { AppStateProvider, useApp } from "./state";
 import { PageShell, TopBar } from "./components/Layout";
 import { SkeletonBlock } from "./components/ui";
 import { DeskHome } from "./views/DeskHome";
-import { GapLab } from "./views/GapLab";
-import { FlightRisk } from "./views/FlightRisk";
-import { PeerPull } from "./views/PeerPull";
 import { ScenariosView } from "./views/Scenarios";
-import { PortfolioView } from "./views/Portfolio";
 import { EvidenceView } from "./views/Evidence";
 import { MethodView } from "./views/Method";
 
@@ -47,13 +43,9 @@ function Screen() {
 
   const view = {
     desk: <DeskHome />,
-    gap: <GapLab />,
-    flight: <FlightRisk />,
-    peers: <PeerPull />,
-    scenarios: <ScenariosView />,
-    portfolio: <PortfolioView />,
-    evidence: <EvidenceView />,
     method: <MethodView />,
+    scenarios: <ScenariosView />,
+    evidence: <EvidenceView />,
   }[state.view];
 
   return (

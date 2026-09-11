@@ -24,15 +24,7 @@ export type HubId =
 /** Strategic Compensation Target percentile (drives Pay_Gap / remediation). */
 export type TargetPercentile = "p25" | "p50" | "p75";
 
-export type ViewId =
-  | "desk"
-  | "gap"
-  | "flight"
-  | "peers"
-  | "portfolio"
-  | "scenarios"
-  | "evidence"
-  | "method";
+export type ViewId = "desk" | "method" | "scenarios" | "evidence";
 
 export type RiskTier = "critical" | "high" | "watch" | "stable" | "premium";
 export type GapVerdict = "underpaid" | "at_market" | "overpaid";

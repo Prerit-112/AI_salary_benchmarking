@@ -4,14 +4,13 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useGapAnalysis, useApp } from "../state";
 import { Card, EmptyState, SectionTitle, Stat, ThreatBadge, inputClass } from "../components/ui";
 import { downloadCsv, observationsToCsv } from "../lib/export";
-import { HUB_OPTIONS, hubOption } from "../lib/metros";
+import { hubOption } from "../lib/metros";
 import { formatCompactINR, formatINR } from "../lib/money";
 import { metricValue } from "../lib/stats";
 import {
   geographicPremiumInsight,
   MARKET_POSITION_LABEL,
   PAY_GAP_LABEL,
-  metricCurrencyLabel,
   roleCompensationPremiumInsight,
   roleDemandInsight,
 } from "../lib/marketBenchmark";
@@ -25,7 +24,6 @@ export function EvidenceView() {
   const hub = hubOption(state.hub);
 
   const metric = "market" as const;
-  const mode = "market" as const;
 
   const rows = useMemo(() => {
     if (!analysis) return [];
@@ -71,8 +69,8 @@ export function EvidenceView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionTitle
-          title="Market evidence"
-          subtitle={`India multi-metro filing samples · ${hub.shortLabel} hub · strategic target ${analysis.benchmarkLabel}.`}
+          title="Evidence"
+          subtitle={`${hub.shortLabel} filing samples behind the Desk slice · target ${analysis.benchmarkLabel}.`}
         />
         <button
           type="button"
@@ -88,24 +86,23 @@ export function EvidenceView() {
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
           <Stat
-            label="Market Benchmark (P50)"
+            label={`${hub.shortLabel} P50`}
             value={formatCompactINR(analysis.marketBenchmarkValue ?? analysis.marketMedian)}
-            hint="Matched P50 only"
           />
         </Card>
         <Card className="p-4">
           <Stat
             label={analysis.benchmarkLabel}
             value={formatCompactINR(analysis.marketValue)}
-            hint="Strategic Compensation Target for active hub"
+            hint="Active strategic target"
           />
         </Card>
         <Card className="p-4">
           <Stat
-            label="Pay Gap %"
+            label="Pay gap"
             value={
               analysis.payGapPct != null
                 ? `${analysis.payGapPct >= 0 ? "+" : ""}${analysis.payGapPct.toFixed(1)}%`
@@ -119,39 +116,39 @@ export function EvidenceView() {
         </Card>
         <Card className="p-4">
           <Stat
-            label="Expected offer"
-            value={
-              analysis.offerRangeSupported
-                ? `${formatCompactINR(analysis.expectedOfferLow)} – ${formatCompactINR(analysis.expectedOfferHigh)}`
-                : "—"
-            }
-            hint={analysis.offerRangeSupported ? "P75–P90" : "Talent Market View only"}
+            label="Offer band"
+            value={`${formatCompactINR(analysis.expectedOfferLow)} – ${formatCompactINR(analysis.expectedOfferHigh)}`}
+            hint="P75–P90"
           />
         </Card>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-4">
-          <Stat label="P25" value={formatCompactINR(analysis.band.p25)} />
-        </Card>
-        <Card className="p-4">
-          <Stat label="P75" value={formatCompactINR(analysis.band.p75)} />
-        </Card>
-        <Card className="p-4">
-          <Stat label="P90" value={formatCompactINR(analysis.band.p90)} />
-        </Card>
-        <Card className="p-4">
-          <Stat label="Current salary" value={formatCompactINR(analysis.yourPay)} />
-        </Card>
+      <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border border-ink/8 bg-paper/60 px-4 py-3 text-sm">
+        <span>
+          <span className="text-[10px] uppercase tracking-wider text-mute">P25 </span>
+          <span className="tabular">{formatCompactINR(analysis.band.p25)}</span>
+        </span>
+        <span>
+          <span className="text-[10px] uppercase tracking-wider text-mute">P75 </span>
+          <span className="tabular">{formatCompactINR(analysis.band.p75)}</span>
+        </span>
+        <span>
+          <span className="text-[10px] uppercase tracking-wider text-mute">P90 </span>
+          <span className="tabular">{formatCompactINR(analysis.band.p90)}</span>
+        </span>
+        <span>
+          <span className="text-[10px] uppercase tracking-wider text-mute">Paying </span>
+          <span className="tabular">{formatCompactINR(analysis.yourPay)}</span>
+        </span>
       </div>
 
       <Card className="p-4 text-sm leading-relaxed text-ink/85">
         <p>
-          <strong>Market position:</strong> {MARKET_POSITION_LABEL[analysis.marketPosition]} ·{" "}
-          <strong>Talent Market Value:</strong>{" "}
-          {formatCompactINR(analysis.talentMarketValue)} ·{" "}
-          <strong>Role demand:</strong> {analysis.roleDemandIndex?.toFixed(2) ?? "—"} ·{" "}
-          <strong>Talent scarcity:</strong> {analysis.talentScarcityIndicator ?? "—"}
+          <strong>Position:</strong> {MARKET_POSITION_LABEL[analysis.marketPosition]}
+          {" · "}
+          <strong>Demand:</strong> {analysis.roleDemandIndex?.toFixed(2) ?? "—"}
+          {" · "}
+          <strong>Scarcity:</strong> {analysis.talentScarcityIndicator ?? "—"}
         </p>
         <p className="mt-2 text-xs text-mute">
           {roleDemandInsight(analysis.roleDemandIndex) ?? ""}
@@ -173,29 +170,13 @@ export function EvidenceView() {
           ) ?? "Role compensation premium: —"}{" "}
           (insight only)
         </p>
-        <div className="mt-3 rounded-lg border border-ink/8 bg-ink/[0.02] p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-mute">
-            Geographic cost premium scaling (vs Bengaluru = 1.00)
-          </p>
-          <ul className="mt-2 grid gap-1 text-xs text-ink/80 sm:grid-cols-2">
-            {HUB_OPTIONS.filter((h) => h.id !== "bengaluru").map((h) => (
-              <li key={h.id} className={h.id === hub.id ? "font-medium text-copper" : undefined}>
-                {h.legend}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {analysis.riskSupported ? (
-            <ThreatBadge
-              tier={analysis.competitiveThreatTier}
-              score={analysis.competitiveThreatScore}
-            />
-          ) : (
-            <span className="text-xs text-mute">Threat scoring: Talent Market View only</span>
-          )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <ThreatBadge
+            tier={analysis.competitiveThreatTier}
+            score={analysis.competitiveThreatScore}
+          />
           <span className="text-xs text-mute">
-            Top hiring companies:{" "}
+            Top employers:{" "}
             {analysis.topCompetitors.map((c) => c.employerLabel).slice(0, 5).join(", ") || "—"}
           </span>
         </div>
@@ -219,7 +200,7 @@ export function EvidenceView() {
         </label>
         <span className="text-xs text-mute tabular">{rows.length.toLocaleString()} rows</span>
         <span className="ml-auto rounded-md bg-ink/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-mute">
-          Your pay ({metricCurrencyLabel(mode)}): {formatCompactINR(analysis.yourPay)}
+          Your pay (INR): {formatCompactINR(analysis.yourPay)}
         </span>
       </Card>
 

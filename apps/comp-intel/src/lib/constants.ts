@@ -84,7 +84,7 @@ export const VERDICT_LABEL: Record<string, string> = {
 
 export const PRODUCT_NAME = "PayRisk Desk";
 export const PRODUCT_TAGLINE =
-  "What is this talent worth in the market — and who could poach them?";
+  "India multi-metro alignment — hub × strategic target.";
 
 export const OBSERVATION_DISCLAIMER =
   "India multi-metro tech benchmarks (Bengaluru baseline + Mumbai / Delhi-NCR / Hyderabad / Chennai / Pune). Market median is the selected hub’s P50 from Role × Experience summary bands. Filing samples are progressive Evidence excerpts — not headcount or confirmed offers. Flight-risk and competitor views are directional decision aids.";

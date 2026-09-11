@@ -37,8 +37,8 @@ export function ScenariosView() {
   return (
     <div className="space-y-8">
       <SectionTitle
-        title="Scenarios"
-        subtitle={`Cost to reach ${analysis.benchmarkLabel} / P25 / P50 / P75 for ${hub.shortLabel} (index ${hub.multiplier.toFixed(2)}) — and how retention risk moves when risk is supported for the active mode.`}
+        title="Scenario"
+        subtitle={`Cost to close gaps to P25 / P50 / P75 in ${hub.shortLabel} (index ${hub.multiplier.toFixed(2)}) — and how retention risk moves after each raise.`}
       />
 
       <Card className="p-5">
@@ -113,9 +113,8 @@ export function ScenariosView() {
       </div>
 
       <Card className="p-5 text-sm text-mute leading-relaxed">
-        Reminder: costs are annual cash/TC increments in the selected metric for the active Indian hub.
-        Equity, bonus structure, and benefits are out of scope unless captured in Total Compensation
-        observations.
+        Costs are annual INR increments for the active hub. Equity, bonus structure, and benefits are
+        out of scope unless already in Total Compensation observations.
       </Card>
     </div>
   );

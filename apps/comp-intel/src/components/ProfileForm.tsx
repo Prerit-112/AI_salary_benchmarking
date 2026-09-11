@@ -26,9 +26,7 @@ export function ProfileForm({ compact = false }: { compact?: boolean }) {
 
       {indiaOnly ? (
         <p className="text-[11px] leading-relaxed text-mute">
-          India multi-metro tech benchmarks (Bengaluru baseline + Mumbai / Delhi-NCR / Hyderabad /
-          Chennai / Pune). Use the header hub selector and Strategic Compensation Target to switch
-          market columns.
+          Switch hub and P25 / P50 / P75 target in the header — salary stays fixed in INR.
         </p>
       ) : null}
 

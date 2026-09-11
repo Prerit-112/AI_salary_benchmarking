@@ -145,7 +145,7 @@ export function FlightRisk() {
             <button
               type="button"
               className="btn-secondary flex-1"
-              onClick={() => dispatch({ type: "view", view: "peers" })}
+              onClick={() => dispatch({ type: "view", view: "evidence" })}
             >
               See competitors
             </button>
