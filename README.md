@@ -11,11 +11,13 @@ This is **not** a simple dollar-to-rupee currency conversion.
 
 | Item | Path |
 |------|------|
-| **Input (raw US data)** | `ai_salary/AI_Talent_Salary_Benchmark_MAX_FreeSources.csv` (~66,799 rows) |
-| **Engine script** | `ai_salary/india_tech_benchmark_engine.py` |
-| **Clean / structure script** | `ai_salary/clean_india_benchmark.py` |
-| **Filing grain (clean row-level)** | `ai_salary/india_tech_roles_benchmark.csv` (~64,839 rows) |
-| **Summary grain (Role × Experience)** | `ai_salary/india_tech_roles_benchmark_summary.csv` (236 bands) |
+| **Input (raw US data)** | `AI_Talent_Salary_Benchmark_MAX_FreeSources.csv` (~56,731 FY2026 Q3 filings; includes `Role_Family`) |
+| **Engine script** | `india_tech_benchmark_engine.py` |
+| **Clean / structure script** | `clean_india_benchmark.py` |
+| **Filing grain (clean row-level)** | `india_tech_roles_benchmark.csv` (~53,754 rows) |
+| **Summary grain (Role × Experience)** | `india_tech_roles_benchmark_summary.csv` (106 bands) |
+| **DOL → MAX rebuild** | `build_max_from_dol_fy2026_q3.py` |
+| **PayRisk Desk (UI)** | `apps/comp-intel/` |
 | **Related India country deliverable (separate published/GCC file)** | `output/country/India_AI_Salary_Benchmark.csv` |
 
 > **Note:** `output/country/India_AI_Salary_Benchmark.csv` is the project’s India country benchmark deliverable (different schema; published/GCC-style rows).  
@@ -218,29 +220,30 @@ Also `LEVEL_II` is checked before `LEVEL_I` so “Level_II” is not misread as 
 
 **Idea:** Scarce AI specialties pay a premium over general data roles.
 
-We uppercase `Role_Name` and check **partial text match** in this order (first hit wins):
+When `Role_Family` is present (current MAX), we map scarcity by family first:
 
-| If Role_Name contains… | Omega_Role | Why |
-|------------------------|------------|-----|
-| GENERATIVE AI / LLM ARCHITECT / DEEP LEARNING | **1.25** | Highest scarcity / newest premium skills |
-| MACHINE LEARNING / MLOPS | **1.20** | Strong ML platform demand |
-| AI RESEARCH SCIENTIST / APPLIED SCIENTIST / RESEARCH ENGINEER / COMPUTER VISION / NLP | **1.15** | Research / specialized AI |
-| DATA SCIENTIST | **1.05** | Broad DS demand, moderate premium |
-| DATA ENGINEER / ANALYTICS ENGINEER | **1.00** | Core data role baseline |
-| Anything else | **1.05** | Safe default (slight premium) |
+| Role_Family | Omega_Role |
+|-------------|------------|
+| Generative_AI | **1.25** |
+| ML_Engineering · FD · AI_Platform_MLOps | **1.20** |
+| AI_Research · AI_Leadership | **1.15** |
+| AI_Engineering · AI_Product · AI_Consulting_Architecture | **1.12** |
+| AI_GTM_Sales · Software_AI_Tagged | **1.08** |
+| Data_Science | **1.05** |
+| Data_Engineering | **1.00** |
+| Anything else | **1.05** (default) |
 
-**Why ordered matching?**  
-Titles like *“Senior Machine Learning Engineer II”* still match `MACHINE LEARNING` even with extra words.
+If `Role_Family` is missing, we fall back to ordered `Role_Name` substring matching (same scarcity ladder).
 
 **Examples**
 
-| Role_Name | Omega_Role |
-|-----------|------------|
-| AI Research Scientist | **1.15** |
-| Data Engineer | **1.00** |
-| Data Scientist | **1.05** |
-| Generative AI Engineer | **1.25** |
-| Software Engineer (no AI keywords) | **1.05** (default) |
+| Role_Name | Role_Family | Omega_Role |
+|-----------|-------------|------------|
+| Forward Deployed AI Engineer | FD | **1.20** |
+| Generative AI Engineer | Generative_AI | **1.25** |
+| AI Research Scientist | AI_Research | **1.15** |
+| Data Engineer | Data_Engineering | **1.00** |
+| Data Scientist | Data_Science | **1.05** |
 
 ---
 
@@ -378,14 +381,70 @@ Entry AI Engineer metro medians from the same row: Mumbai ≈ ₹3,501,750 · De
 6. Write calibrated filing file
 7. Run cleaner: dedupe, format, structure columns, refresh metro columns, build multi-metro summary grain
 
-### Run it
+### Run it (India calibration only)
+
+From this folder (`ai_salary/`):
 
 ```bash
-python ai_salary/india_tech_benchmark_engine.py
-python ai_salary/clean_india_benchmark.py
+python india_tech_benchmark_engine.py
+python clean_india_benchmark.py
 ```
 
 Requires: `pandas`, `numpy`
+
+---
+
+## Run the UI (PayRisk Desk)
+
+```bash
+cd apps/comp-intel
+npm install
+npm run dev
+```
+
+`npm run dev` re-ingests the India CSVs into `public/data/*.json`, then starts Vite. Open the URL it prints (usually `http://localhost:5173`).
+
+If CSVs changed while the server was already running, stop it (Ctrl+C) and run `npm run dev` again so ingest picks up the new bands.
+
+---
+
+## Updating the data later (refresh runbook)
+
+When DOL publishes a newer quarter (or you want to remap roles):
+
+1. **Download** from https://www.dol.gov/agencies/eta/foreign-labor/performance  
+   - `LCA_Disclosure_Data_FY{YYYY}_Q{n}.xlsx`  
+   - `LCA_Worksites_FY{YYYY}_Q{n}.xlsx` (filename may use `FY_` with an extra underscore)
+
+2. **Place** both files in this folder (`ai_salary/`). Update default paths in `build_max_from_dol_fy2026_q3.py` if the quarter/year changed, or pass CLI flags.
+
+3. **Rebuild MAX** (canonical roles + `Role_Family`, including `FD`):
+
+```bash
+python build_max_from_dol_fy2026_q3.py
+# or, for a newer quarter:
+python build_max_from_dol_fy2026_q3.py --disclosure LCA_Disclosure_Data_FY2027_Q1.xlsx --worksites LCA_Worksites_FY2027_Q1.xlsx
+```
+
+   Writes `AI_Talent_Salary_Benchmark_MAX_FreeSources.csv`.
+
+4. **Recalibrate India filings + summary:**
+
+```bash
+python india_tech_benchmark_engine.py
+python clean_india_benchmark.py
+```
+
+5. **Refresh the UI data layer:**
+
+```bash
+cd apps/comp-intel
+npm run ingest
+# or just:
+npm run dev
+```
+
+Role taxonomy lives in `build_max_from_dol_fy2026_q3.py` (`INCLUDE_RE`, `DENYLIST_RE`, `ROLE_RULES`). Scarcity (`Omega_Role`) lives in `india_tech_benchmark_engine.py` and should stay aligned with `Role_Family` names.
 
 ---
 

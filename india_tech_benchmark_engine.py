@@ -162,27 +162,67 @@ def compute_gamma_exp(df: pd.DataFrame) -> pd.DataFrame:
 
 def compute_omega_role(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Borderless domain scarcity index via ordered partial-substring match on Role_Name.
-    First matching band wins (highest scarcity checked first).
+    Role scarcity index.
+
+    Prefer Role_Family when present (Phase-1 taxonomy). Fall back to Role_Name
+    substring matching for legacy extracts without Role_Family.
     """
+    family = _normalize_str_series(
+        df["Role_Family"] if "Role_Family" in df.columns else pd.Series("", index=df.index)
+    )
     role = _normalize_str_series(
         df["Role_Name"] if "Role_Name" in df.columns else pd.Series("", index=df.index)
     )
 
-    conditions = [
-        role.str.contains(r"GENERATIVE AI|LLM ARCHITECT|DEEP LEARNING", regex=True, na=False),
-        role.str.contains(r"MACHINE LEARNING|MLOPS", regex=True, na=False),
+    # Family-first ladder (highest scarcity first)
+    family_conditions = [
+        family.isin(["GENERATIVE_AI"]),
+        family.isin(["ML_ENGINEERING", "FD", "AI_PLATFORM_MLOPS"]),
+        family.isin(["AI_RESEARCH", "AI_LEADERSHIP"]),
+        family.isin(["AI_ENGINEERING", "AI_PRODUCT", "AI_CONSULTING_ARCHITECTURE"]),
+        family.isin(["AI_GTM_SALES", "SOFTWARE_AI_TAGGED"]),
+        family.isin(["DATA_SCIENCE"]),
+        family.isin(["DATA_ENGINEERING"]),
+    ]
+    family_choices = [1.25, 1.20, 1.15, 1.12, 1.08, 1.05, 1.00]
+
+    omega_family = np.select(family_conditions, family_choices, default=np.nan)
+
+    # Name fallback for rows without usable family
+    name_conditions = [
         role.str.contains(
-            r"AI RESEARCH SCIENTIST|APPLIED SCIENTIST|RESEARCH ENGINEER|COMPUTER VISION|\bNLP\b",
+            r"GENERATIVE AI|AGENTIC|PROMPT / LLM|DEEP LEARNING", regex=True, na=False
+        ),
+        role.str.contains(
+            r"MACHINE LEARNING|MLOPS|FORWARD DEPLOYED|INFERENCE|AI INFRASTRUCTURE|"
+            r"AI PLATFORM|COMPUTER VISION|\bNLP\b|ROBOTICS AI|RECOMMENDATION",
+            regex=True,
+            na=False,
+        ),
+        role.str.contains(
+            r"AI RESEARCH|APPLIED SCIENTIST|RESEARCH ENGINEER|AI SAFETY|"
+            r"HEAD / DIRECTOR OF AI",
+            regex=True,
+            na=False,
+        ),
+        role.str.contains(
+            r"AI ENGINEER|AI SCIENTIST|MEMBER OF TECHNICAL STAFF|AI ARCHITECT|"
+            r"AI CONSULTANT|AI PRODUCT|AI DESIGNER",
+            regex=True,
+            na=False,
+        ),
+        role.str.contains(
+            r"AI SOLUTIONS|AI SALES|GTM|SOFTWARE ENGINEER \(AI",
             regex=True,
             na=False,
         ),
         role.str.contains(r"DATA SCIENTIST", regex=True, na=False),
         role.str.contains(r"DATA ENGINEER|ANALYTICS ENGINEER", regex=True, na=False),
     ]
-    choices = [1.25, 1.20, 1.15, 1.05, 1.00]
+    name_choices = [1.25, 1.20, 1.15, 1.12, 1.08, 1.05, 1.00]
+    omega_name = np.select(name_conditions, name_choices, default=OMEGA_ROLE_DEFAULT)
 
-    df["Omega_Role"] = np.select(conditions, choices, default=OMEGA_ROLE_DEFAULT).astype(float)
+    df["Omega_Role"] = np.where(np.isnan(omega_family), omega_name, omega_family).astype(float)
     return df
 
 

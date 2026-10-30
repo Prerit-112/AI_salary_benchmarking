@@ -44,15 +44,21 @@ SUMMARY_BANDS = ("P25", "Median", "P75", "Mean")
 PAY_OUTLIER_USD = 500_000.0
 
 ROLE_FAMILY_RULES: list[tuple[str, str]] = [
-    (r"GENERATIVE AI|LLM ARCHITECT", "Generative AI"),
-    (r"DEEP LEARNING", "Deep Learning"),
-    (r"MACHINE LEARNING|MLOPS", "Machine Learning"),
-    (r"COMPUTER VISION", "Computer Vision"),
-    (r"\bNLP\b", "NLP"),
-    (r"AI RESEARCH SCIENTIST|APPLIED SCIENTIST|RESEARCH ENGINEER", "AI Research"),
-    (r"AI ENGINEER|AI PLATFORM|AI PRODUCT", "AI Engineering"),
-    (r"DATA SCIENTIST", "Data Science"),
-    (r"DATA ENGINEER|ANALYTICS ENGINEER", "Data Engineering"),
+    # Fallback mapper when source Role_Family is missing — align with MAX taxonomy
+    (r"FORWARD DEPLOYED|\bFDE\b", "FD"),
+    (r"GENERATIVE AI|AGENTIC|PROMPT / LLM", "Generative_AI"),
+    (r"DEEP LEARNING|COMPUTER VISION|\bNLP\b|ROBOTICS AI|RECOMMENDATION|"
+     r"MACHINE LEARNING", "ML_Engineering"),
+    (r"MLOPS|INFERENCE|AI INFRASTRUCTURE|AI PLATFORM", "AI_Platform_MLOps"),
+    (r"AI RESEARCH|APPLIED SCIENTIST|RESEARCH ENGINEER|AI SAFETY", "AI_Research"),
+    (r"AI SOLUTIONS|AI SALES|GTM|PRE-SALES", "AI_GTM_Sales"),
+    (r"AI PRODUCT|AI DESIGNER", "AI_Product"),
+    (r"AI ARCHITECT|AI CONSULTANT", "AI_Consulting_Architecture"),
+    (r"HEAD / DIRECTOR OF AI", "AI_Leadership"),
+    (r"SOFTWARE ENGINEER \(AI", "Software_AI_Tagged"),
+    (r"AI ENGINEER|AI SCIENTIST|MEMBER OF TECHNICAL STAFF", "AI_Engineering"),
+    (r"DATA SCIENTIST", "Data_Science"),
+    (r"DATA ENGINEER|ANALYTICS ENGINEER", "Data_Engineering"),
 ]
 
 US_CITY_TIER = {
@@ -134,7 +140,7 @@ def clean_filing_grain(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- string hygiene ---
     str_cols = [
-        "Grain", "Role_Name", "Country", "Location", "City", "State",
+        "Grain", "Role_Name", "Role_Family", "Country", "Location", "City", "State",
         "Experience_Level", "Career_Level", "Pay_Type", "Currency_Original",
         "Employer_Name", "Case_Number", "SOC_Code", "Visa_Class",
         "Decision_Date", "Source_Name", "Source_URL", "Collection_Date", "Notes",
@@ -182,7 +188,15 @@ def clean_filing_grain(df: pd.DataFrame) -> pd.DataFrame:
     df["Target_Country"] = "India"
     df["Target_City_Hub"] = "Bengaluru"  # filing baseline hub for Benchmark_INR_Salary
     df["R_B"] = R_B
-    df["Role_Family"] = map_role_family(df["Role_Name"])
+    # Prefer source Role_Family (from MAX rebuild); fill gaps via Role_Name rules
+    if "Role_Family" in df.columns:
+        src_family = _strip_str(df["Role_Family"]).replace(
+            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "<NA>": pd.NA}
+        )
+        inferred = map_role_family(df["Role_Name"])
+        df["Role_Family"] = src_family.fillna(inferred)
+    else:
+        df["Role_Family"] = map_role_family(df["Role_Name"])
     df["Experience_Band"] = map_experience_band(df["Experience_Level"], df["Career_Level"])
     df["YoE_Proxy"] = map_yoe_proxy(df["Experience_Level"], df["Career_Level"])
     df["US_City_Tier"] = df["I_US"].map(US_CITY_TIER).fillna("Tier4_OtherUS")
@@ -191,7 +205,8 @@ def clean_filing_grain(df: pd.DataFrame) -> pd.DataFrame:
     # Hygiene: strip place-name formatting glitches (e.g. trailing backticks)
     for place_col in ("City", "Location"):
         if place_col in df.columns:
-            cleaned = _strip_str(df[place_col]).str.replace(r"[`\u00b4]", "", regex=True)
+            cleaned = _strip_str(df[place_col]).astype(str)
+            cleaned = cleaned.str.replace("`", "", regex=False).str.replace("´", "", regex=False)
             df[place_col] = cleaned.str.replace(r"\s{2,}", " ", regex=True).str.strip()
 
     # Quality flag

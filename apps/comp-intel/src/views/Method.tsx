@@ -152,8 +152,9 @@ export function MethodView() {
         <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-ink/90">
           <li>
             <strong>Primary wage facts</strong> — US Department of Labor OFLC LCA disclosures
-            (H-1B / related certified offered base wages), compiled in{" "}
-            <code>AI_Talent_Salary_Benchmark_MAX_FreeSources.csv</code>. Base wage only — not total
+            (H-1B certified offered base wages), FY2026 Q3 extract in{" "}
+            <code>AI_Talent_Salary_Benchmark_MAX_FreeSources.csv</code> with canonical{" "}
+            <code>Role_Name</code> / <code>Role_Family</code> (incl. FD). Base wage only — not total
             compensation, equity, or benefits.
           </li>
           <li>

@@ -7,9 +7,9 @@
 | **System** | India Tech Salary Benchmark Engine (`ai_salary/`) |
 | **Primary calibration script** | `india_tech_benchmark_engine.py` |
 | **Primary quality / grain script** | `clean_india_benchmark.py` |
-| **Source grain** | `AI_Talent_Salary_Benchmark_MAX_FreeSources.csv` — **66,799** filings × **29** columns |
-| **Filing grain (output)** | `india_tech_roles_benchmark.csv` — **64,839** rows × **48** columns |
-| **Summary grain (output)** | `india_tech_roles_benchmark_summary.csv` — **236** Role × Experience bands × **36** columns |
+| **Source grain** | `AI_Talent_Salary_Benchmark_MAX_FreeSources.csv` — **56,731** FY2026 Q3 filings × **30** columns (incl. `Role_Family`) |
+| **Filing grain (output)** | `india_tech_roles_benchmark.csv` — **53,754** rows |
+| **Summary grain (output)** | `india_tech_roles_benchmark_summary.csv` — **106** Role × Experience bands |
 | **Runtime model** | Fully vectorized NumPy / pandas (no Python row loops in calibration math) |
 | **Currency of truth for India market pay** | `Benchmark_INR_Salary` (Bengaluru baseline) and metro-expanded `Benchmark_INR_*` / `Benchmark_<Metro>_*` |
 
@@ -47,8 +47,8 @@ That distinction is material. Source column `Annual_Pay_INR` (later renamed `Ann
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ STAGE 0 — SOURCE OF RECORD                                                   │
 │ AI_Talent_Salary_Benchmark_MAX_FreeSources.csv                               │
-│ Grain: LCA_Filing | n = 66,799 | schema width = 29                           │
-│ Provenance: US DOL OFLC LCA Disclosure (H-1B / related visa wage facts)      │
+│ Grain: LCA_Filing | n = 56,731 | schema width = 30 (Role_Family)             │
+│ Provenance: US DOL OFLC LCA Disclosure FY2026 Q3 (H-1B wage facts)           │
 └───────────────────────────────────┬──────────────────────────────────────────┘
                                     │
                                     ▼
